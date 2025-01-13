@@ -1,10 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { CalendarScreen } from './Calendar';
-import CenterStyle from './Themes'
+import Calendar from './Calendar';
 
 const Tab = createBottomTabNavigator();
 
@@ -46,7 +45,7 @@ function TabNavigator() {
             size={30}
           />)
         }} />
-      <Tab.Screen name="CALENDAR" component={CalendarScreen}
+      <Tab.Screen name="CALENDAR" component={Calendar}
         options={{
           tabBarIcon: ({ focused }) => (<Ionicons
             name={focused ? "calendar" : "calendar-outline"}
@@ -82,3 +81,12 @@ export default function App() {
     </>
   );
 }
+
+const CenterStyle = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+})
