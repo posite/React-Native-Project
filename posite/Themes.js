@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 const CalendarStyle = StyleSheet.create({
     container: {
         padding: 20,
+        backgroundColor: '#fff'
     },
     header: {
         flexDirection: 'row',
@@ -16,7 +17,7 @@ const CalendarStyle = StyleSheet.create({
         fontWeight: 'bold',
     },
     weekdayText: {
-        width: '14.28%',
+        width: '14.2%',
         justifyContent: 'center',
         textAlign: 'center',
         fontSize: 14,
@@ -27,8 +28,9 @@ const CalendarStyle = StyleSheet.create({
         flexWrap: 'wrap',
     },
     dayContainer: {
-        width: '14.28%',
+        width: '14.2%',
         height: 50,
+        alignItems: 'center',
         justifyContent: 'center'
     },
     dayText: {
@@ -40,17 +42,26 @@ const CalendarStyle = StyleSheet.create({
     },
     sundayText: {
         textAlign: 'center',
-        width: '14.28%',
+        width: '14.2%',
         justifyContent: 'center',
         fontSize: 14,
         color: '#c00',
     },
     saturdayText: {
         textAlign: 'center',
-        width: '14.28%',
+        width: '14.2%',
         justifyContent: 'center',
         fontSize: 14,
         color: '#0cc'
+    }, selectedDay: {
+        borderColor: '#0cc',
+        borderWidth: 1,
+        height: 40,
+        aspectRatio: 1,
+        borderRadius: 50,
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        fontSize: 16
     }
 });
 

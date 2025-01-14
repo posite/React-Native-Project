@@ -1,27 +1,28 @@
 import React, { useState } from 'react';
-import { Text, View, TouchableOpacity } from 'react-native';
+import { Text, View, TouchableOpacity, Button } from 'react-native';
 import calendarStyle from './Themes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [selectedDate, setSelectedDate] = useState(new Date());
 
-    const getDaysInMonth = (year, month) => {
+    const getDaysInMonth = (year: number, month: number) => {
         return new Date(year, month + 1, 0).getDate();
     };
 
-    const getFirstDayOfMonth = (year, month) => {
+    const getFirstDayOfMonth = (year: number, month: number) => {
         return new Date(year, month, 1).getDay();
     };
 
-    const getLastDayOfMonth = (year, month) => {
+    const getLastDayOfMonth = (year: number, month: number) => {
         return new Date(year, month, getDaysInMonth(year, month)).getDay();
     };
 
-    const getPreviousMonthDays = (year, month) => {
+    const getPreviousMonthDays = (year: number, month: number) => {
         const firstDay = getFirstDayOfMonth(year, month);
         const prevMonthDays = [];
-        if (firstDay !== 0) { 
+        if (firstDay !== 0) {
             //console.log("prevMonth " + prevMonth)
             for (let i = 0; i < firstDay; i++) {
                 prevMonthDays.push(-firstDay + i + 1);
@@ -30,26 +31,34 @@ const Calendar = () => {
         return prevMonthDays;
     };
 
-    const getNextMonthDays = (year, month) => {
+    const getNextMonthDays = (year: number, month: number) => {
         const lastDay = getLastDayOfMonth(year, month);
         const nextMonthDays = [];
-        const lastDate = getDaysInMonth(year,month)
+        const lastDate = getDaysInMonth(year, month)
         if (lastDay !== 6) {
             for (let i = lastDay + 1; i < 7; i++) {
-                nextMonthDays.push(lastDate-lastDay+i);
+                nextMonthDays.push(lastDate - lastDay + i);
             }
         }
         return nextMonthDays;
     };
 
     const checkConditions = (day: number, start: number, limit: number) => {
-        if(day <= 0) {
+        if (day <= 0) {
             return start + day;
-        } else if(day > limit) {
+        } else if (day > limit) {
             return day - limit;
         } else {
             return day;
         }
+    }
+
+    const isSelectedDate = (year: number, month: number, day: number, limit:number) => {
+        if(day > limit || day <= 0) return calendarStyle.dayText;
+        if(selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === day) {
+            return calendarStyle.selectedDay;
+        }
+        return calendarStyle.dayText;
     }
 
     const renderDays = () => {
@@ -59,7 +68,8 @@ const Calendar = () => {
         const firstDay = getFirstDayOfMonth(year, month);
         const prevMonthDays = getPreviousMonthDays(year, month);
         const nextMonthDays = getNextMonthDays(year, month);
-
+        //console.log("today " + new Date())
+        //console.log("selected day " + selectedDate);
         const prevMonth = month === 0 ? 11 : month - 1;
         const prevYear = month === 0 ? year - 1 : year;
         const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
@@ -67,23 +77,24 @@ const Calendar = () => {
         const days = Array(firstDay).concat(
             prevMonthDays, Array.from({ length: daysInMonth }, (_, i) => i + 1), nextMonthDays
         );
-        const start = prevMonthDays.length;
-        const end = start + daysInMonth;
+        
         return days.map((day, index) => (
             <View key={index} style={calendarStyle.dayContainer}>
-                {<Text
-                    style={[
-                        calendarStyle.dayText,
-                        day <= 0 || day > daysInMonth ? calendarStyle.otherMonthDay : calendarStyle.dayText,
-                    ]}
-                >
-                    {checkConditions(day, daysInPrevMonth, daysInMonth)}
-                </Text>}
+                <TouchableOpacity onPress={() => setSelectedDate(new Date(year, month, day))}>
+                    <Text
+                        style={[
+                            isSelectedDate(year, month, day, daysInMonth),
+                            day <= 0 || day > daysInMonth ? calendarStyle.otherMonthDay : calendarStyle.dayText,
+                        ]}
+                    >
+                        {checkConditions(day, daysInPrevMonth, daysInMonth)}
+                    </Text>
+                </TouchableOpacity>
             </View>
         ));
     };
 
-    const handleMonthChange = (offset) => {
+    const handleMonthChange = (offset: number) => {
         const newDate = new Date(
             currentDate.getFullYear(),
             currentDate.getMonth() + offset,
@@ -92,10 +103,10 @@ const Calendar = () => {
         setCurrentDate(newDate);
     };
 
-    const renderDate = (date) => {
-        if(date == 'Sun') {
+    const renderDate = (date: String) => {
+        if (date == 'Sun') {
             return calendarStyle.sundayText
-        } else if(date == 'Sat') {
+        } else if (date == 'Sat') {
             return calendarStyle.saturdayText
         } else {
             return calendarStyle.weekdayText
@@ -107,13 +118,13 @@ const Calendar = () => {
             {/* 월 변경 */}
             <View style={calendarStyle.header}>
                 <TouchableOpacity onPress={() => handleMonthChange(-1)}>
-                    <MaterialCommunityIcons name="chevron-left" size={24} color="black" />
+                    <MaterialCommunityIcons name="chevron-left" size={24} color='#0cc' />
                 </TouchableOpacity>
                 <Text style={calendarStyle.headerText}>
-                    {currentDate.getFullYear()}년 {currentDate.getMonth() + 1}월
+                    {currentDate.toLocaleString('en-US', { month: 'long' })} {currentDate.getFullYear()}
                 </Text>
                 <TouchableOpacity onPress={() => handleMonthChange(1)}>
-                <MaterialCommunityIcons name="chevron-right" size={24} color="black" />
+                    <MaterialCommunityIcons name="chevron-right" size={24} color='#0cc' />
                 </TouchableOpacity>
             </View>
 
