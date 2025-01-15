@@ -3,7 +3,8 @@ import { StyleSheet } from 'react-native';
 
 const CalendarStyle = StyleSheet.create({
     container: {
-        padding: 20,
+        paddingHorizontal: 20,
+        paddingVertical: 16,
         backgroundColor: '#fff'
     },
     header: {
@@ -31,11 +32,12 @@ const CalendarStyle = StyleSheet.create({
         width: '14.2%',
         height: 50,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     dayText: {
         textAlign: 'center',
-        fontSize: 16
+        fontSize: 16,
+        textAlignVertical: 'center',
     },
     otherMonthDay: {
         color: '#ccc',
@@ -56,12 +58,11 @@ const CalendarStyle = StyleSheet.create({
     }, selectedDay: {
         borderColor: '#0cc',
         borderWidth: 1,
-        height: 40,
+        height: 33,
         aspectRatio: 1,
         borderRadius: 50,
-        textAlign: 'center',
         textAlignVertical: 'center',
-        fontSize: 16
+        fontSize: 16,
     }
 });
 
