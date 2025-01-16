@@ -7,7 +7,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
     const [todayDate, setTodayDate] = useState(new Date());
-    currentDate.setDate(1)
+    //currentDate.setDate(1)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isWeekly, setIsWeekly] = useState(false);
 
@@ -146,14 +146,18 @@ const Calendar = () => {
         const prevMonth = currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1;
         const prevYear = currentDate.getMonth() === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
         const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
-        //console.log("currentDate " + currentDate)
+        console.log("currentDate " + currentDate)
         if (isWeekly) {
             const lastMonth = getPreviousMonthDays(currentDate.getFullYear(), currentDate.getMonth())
             let weekDays = Array()
             const startOfWeek = currentDate.getDate() - (currentDate.getDay() || 7);
             //console.log(lastMonth.length)
-            if(lastMonth.length == 0) {
-                weekDays = Array.from({ length: 7}, (_, i) => i+1);
+            if (lastMonth.length == 0) {
+                if(currentDate.getDate() <7) {
+                    weekDays = Array.from({ length: 7 }, (_, i) => i + 1);
+                } else {
+                    weekDays = Array.from({ length: 7 }, (_, i) => startOfWeek + i);
+                }
             } else {
                 weekDays = Array.from({ length: 7 }, (_, i) => startOfWeek + i);
             }
@@ -196,22 +200,23 @@ const Calendar = () => {
     };
 
     const handleMonthChange = (offset: number) => {
-        const newDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth() + offset,
-            1
-        );
-        setCurrentDate(newDate);
-    };
+        if (isWeekly) {
+            const newDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth(),
+                currentDate.getDate() + offset * 7
+            );
+            console.log("new Date " + newDate)
+            setCurrentDate(newDate);
+        } else {
+            const newDate = new Date(
+                currentDate.getFullYear(),
+                currentDate.getMonth() + offset,
+            );
+            setCurrentDate(newDate);
+        }
 
-    const handleWeekChange = (offset: number) => {
-        const newDate = new Date(
-            currentDate.getFullYear(),
-            currentDate.getMonth(),
-            currentDate.getDate() + offset * 7
-        );
-        setCurrentDate(newDate);
-    }
+    };
 
     const renderDate = (date: String) => {
         if (date == 'Sun') {
