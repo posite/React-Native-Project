@@ -6,9 +6,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const Calendar = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [todayDate, setTodayDate] = useState(new Date());
+    currentDate.setDate(1)
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isWeekly, setIsWeekly] = useState(false);
-    
+
 
 
     const getDaysInMonth = (year: number, month: number) => {
@@ -62,6 +64,7 @@ const Calendar = () => {
 
     const isSelectedDate = (year: number, month: number, day: number, limit: number) => {
         if (day > limit || day <= 0) return calendarStyle.dayText;
+        if (selectedDate == null) return calendarStyle.dayText;
         if (selectedDate.getFullYear() === year && selectedDate.getMonth() === month && selectedDate.getDate() === day) {
             return calendarStyle.selectedDay;
         }
@@ -75,7 +78,7 @@ const Calendar = () => {
             },
             onStartShouldSetPanResponderCapture: () => false,
             onPanResponderMove(e, gestureState) {
-                if(Math.abs(gestureState.dy) < 5) return true
+                if (Math.abs(gestureState.dy) < 5) return true
                 //console.log(gestureState.dy)
                 const value = height + gestureState.dy
                 if (gestureState.dy > 0) {
@@ -107,11 +110,11 @@ const Calendar = () => {
                             useNativeDriver: false,
                         }).start();
                     }
-                    
+
                 }
             },
             onPanResponderRelease: (_, gestureState) => {
-                if(Math.abs(gestureState.dy) < 5) return true
+                if (Math.abs(gestureState.dy) < 5) return true
                 const value = height + gestureState.dy
                 //console.log("height " + height)
                 if (value < 50) {
@@ -120,7 +123,7 @@ const Calendar = () => {
                         useNativeDriver: false,
                     }).start();
                     setIsWeekly(true);
-                } else if(value > (renderDays().length / 7 - 1) * 50 + 24) {
+                } else if (value > (renderDays().length / 7 - 1) * 50 + 24) {
                     height = (renderDays().length / 7 - 1) * 50 + 24;
                     Animated.spring(animatedHeight, {
                         toValue: height,
@@ -138,51 +141,53 @@ const Calendar = () => {
     ).current;
 
     const renderDays = () => {
-        const year = currentDate.getFullYear();
-        const month = currentDate.getMonth();
-        const daysInMonth = getDaysInMonth(year, month);
-        const firstDay = getFirstDayOfMonth(year, month);
-        const prevMonthDays = getPreviousMonthDays(year, month);
-        const nextMonthDays = getNextMonthDays(year, month);
         //console.log("today " + new Date())
         //console.log("selected day " + selectedDate);
-        const prevMonth = month === 0 ? 11 : month - 1;
-        const prevYear = month === 0 ? year - 1 : year;
+        const prevMonth = currentDate.getMonth() === 0 ? 11 : currentDate.getMonth() - 1;
+        const prevYear = currentDate.getMonth() === 0 ? currentDate.getFullYear() - 1 : currentDate.getFullYear();
         const daysInPrevMonth = getDaysInMonth(prevYear, prevMonth);
+        //console.log("currentDate " + currentDate)
         if (isWeekly) {
-            const selectedDay = selectedDate.getDate();
-            const startOfWeek = selectedDay - (selectedDate.getDay() || 7);
-            const weekDays = Array.from({ length: 7 }, (_, i) => startOfWeek + i);
+            const lastMonth = getPreviousMonthDays(currentDate.getFullYear(), currentDate.getMonth())
+            let weekDays = Array()
+            const startOfWeek = currentDate.getDate() - (currentDate.getDay() || 7);
+            //console.log(lastMonth.length)
+            if(lastMonth.length == 0) {
+                weekDays = Array.from({ length: 7}, (_, i) => i+1);
+            } else {
+                weekDays = Array.from({ length: 7 }, (_, i) => startOfWeek + i);
+            }
+            //console.log(weekDays)
             height = 50
             return weekDays.map((day, index) => (
                 <View key={index} style={calendarStyle.dayContainer}>
-                    <TouchableOpacity onPress={() => setSelectedDate(new Date(year, month, day))}>
+                    <TouchableOpacity onPress={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}>
                         <Text
                             style={[
-                                isSelectedDate(year, month, day, daysInMonth),
-                                day <= 0 || day > daysInMonth ? calendarStyle.otherMonthDay : calendarStyle.dayText,
+                                isSelectedDate(currentDate.getFullYear(), currentDate.getMonth(), day, getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth())),
+                                day <= 0 || day > getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) ? calendarStyle.otherMonthDay : calendarStyle.dayText,
                             ]}
                         >
-                            {checkConditions(day, daysInPrevMonth, daysInMonth)}
+                            {checkConditions(day, daysInPrevMonth, getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()))}
                         </Text>
                     </TouchableOpacity>
                 </View>
             ));
         } else {
-            const days = Array(firstDay).concat(
-                prevMonthDays, Array.from({ length: daysInMonth }, (_, i) => i + 1), nextMonthDays
+            const days = Array(getFirstDayOfMonth(currentDate.getFullYear(), currentDate.getMonth())).concat(
+                getPreviousMonthDays(currentDate.getFullYear(), currentDate.getMonth()), Array.from({ length: getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) }, (_, i) => i + 1), getNextMonthDays(currentDate.getFullYear(), currentDate.getMonth())
             );
 
             return days.map((day, index) => (
                 <View key={index} style={calendarStyle.dayContainer}>
-                    <TouchableOpacity onPress={() => setSelectedDate(new Date(year, month, day))}>
+                    <TouchableOpacity onPress={() => setSelectedDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), day))}>
                         <Text
                             style={[
-                                isSelectedDate(year, month, day, daysInMonth),
-                                day <= 0 || day > daysInMonth ? calendarStyle.otherMonthDay : calendarStyle.dayText,
+                                isSelectedDate(currentDate.getFullYear(), currentDate.getMonth(), day, getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth())),
+                                day <= 0 || day > getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) ? calendarStyle.otherMonthDay : calendarStyle.dayText,
                             ]}
                         >
-                            {checkConditions(day, daysInPrevMonth, daysInMonth)}
+                            {checkConditions(day, daysInPrevMonth, getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()))}
                         </Text>
                     </TouchableOpacity>
                 </View>
