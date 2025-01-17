@@ -1,9 +1,9 @@
-import React, { useState, useRef } from 'react';
-import { Animated, Text, View, TouchableOpacity, PanResponder, LogBox  } from 'react-native';
+import React, { useState, useRef, useCallback } from 'react';
+import { Animated, Text, View, TouchableOpacity, PanResponder, LogBox } from 'react-native';
 import calendarStyle from './Themes';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { addDays, eachDayOfInterval, eachWeekOfInterval, eachMonthOfInterval, subDays, subMonths, subWeeks, addWeeks, addMonths, eachWeekendOfMonth } from 'date-fns';
-import PagerView from 'react-native-pager-view';
+import PagerView, { PagerViewOnPageScrollEvent, PagerViewOnPageSelectedEvent } from 'react-native-pager-view';
 
 LogBox.ignoreLogs([
     "Warning: Each child in a list should have a unique \"key\" prop",
@@ -11,11 +11,10 @@ LogBox.ignoreLogs([
 
 const Calendar: React.FC = () => {
     const [currentDate, setCurrentDate] = useState(new Date());
-    const [todayDate, setTodayDate] = useState(new Date());
-    //currentDate.setDate(1)
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [isWeekly, setIsWeekly] = useState(false);
     const [currentWeek, setCurrentWeek] = useState(2)
+    const [swipeDirection, setSwipteDirection] = useState('')
 
     const weekDates = eachWeekOfInterval(
         {
@@ -38,13 +37,13 @@ const Calendar: React.FC = () => {
         {
             start: subMonths(new Date(), 2),
             end: addMonths(new Date(), 2),
-        }, 
-        
+        },
+
     ).reduce((acc: Date[][], cur) => {
         const start = new Date(cur)
         //console.log(start + " " + start.getDay())
         let subStart = 0
-        if(start.getDay() != 0) {
+        if (start.getDay() != 0) {
             subStart = start.getDay();
         }
         //console.log("after : " + start + " " + start.getDay())
@@ -53,7 +52,7 @@ const Calendar: React.FC = () => {
         //console.log("days" + getDaysInMonth(end.getFullYear(), end.getMonth()))
         end.setDate(getDaysInMonth(end.getFullYear(), end.getMonth()))
         let addEnd = 0
-        if(end.getDay() != 6) {
+        if (end.getDay() != 6) {
             addEnd = 6 - end.getDay()
         }
         //console.log("end" + end)
@@ -70,9 +69,9 @@ const Calendar: React.FC = () => {
     function getDaysInMonth(year: number, month: number) {
         return new Date(year, month + 1, 0).getDate();
     };
-    
-    const animatedHeight = useRef(new Animated.Value((getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth() )/ 7 - 1) * 50 + 24)).current; // 초기 높이 설정
-    let height = getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7 * 50 + 24
+
+    const animatedHeight = useRef(new Animated.Value((getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7) * 40)).current; // 초기 높이 설정
+    let height = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7) * 40
 
     function getFirstDayOfMonth(year: number, month: number) {
         return new Date(year, month, 1).getDay();
@@ -134,14 +133,16 @@ const Calendar: React.FC = () => {
             onStartShouldSetPanResponderCapture: () => false,
             onPanResponderMove(e, gestureState) {
                 if (Math.abs(gestureState.dy) < 10) return true
+                let standard = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7) * 40
+                if (monthDates[currentWeek].length > 35) standard += 40
                 //console.log(gestureState.dy)
                 const value = height + gestureState.dy
-                console.log("value " + value)
+                //console.log("value " + value)
                 if (gestureState.dy > 0) {
                     //console.log(true);
                     setIsWeekly(false);
-                    if (value > (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7 - 1) * 50 + 24) {
-                        height = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7 - 1) * 50 + 24
+                    if (value > standard) {
+                        height = standard
                         Animated.spring(animatedHeight, {
                             toValue: height,
                             useNativeDriver: false,
@@ -179,7 +180,9 @@ const Calendar: React.FC = () => {
                 //     return true
                 // }
                 const value = height + gestureState.dy
-                console.log("value " + value)
+                let standard = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7) * 40
+                if (monthDates[currentWeek].length > 35) standard += 40
+                //console.log("value " + value)
                 if (value <= 50) {
                     Animated.spring(animatedHeight, {
                         toValue: 50,
@@ -187,8 +190,8 @@ const Calendar: React.FC = () => {
                     }).start();
                     height = 50
                     setIsWeekly(true);
-                } else if (value > (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7 - 1) * 50 + 24) {
-                    height = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7 - 1) * 50 + 24;
+                } else if (value > standard) {
+                    height = standard;
                     Animated.spring(animatedHeight, {
                         toValue: height,
                         useNativeDriver: false,
@@ -226,42 +229,54 @@ const Calendar: React.FC = () => {
         //console.log(weekDays)
         //height = 50
         //console.log("height " + height)
-        //console.log(selectedDate)
-        if(isWeekly) {
+        console.log(currentDate)
+        if (isWeekly) {
+            const week = weekDates[currentWeek]
+            let standard = week[6]
+            if (swipeDirection == 'Right') standard = week[0]
             return weekDates.map((week, i) => (
-                <Animated.View key={i} style={ [{height: animatedHeight, overflow: 'hidden', borderBottomWidth: 1, borderStyle: 'dotted', borderColor: '#ccc' }]} {...panResponder.panHandlers}>
+                <Animated.View key={i} style={[{ height: animatedHeight, overflow: 'hidden', borderBottomWidth: 1, borderStyle: 'dotted', borderColor: '#ccc' }]} {...panResponder.panHandlers}>
                     <View style={calendarStyle.pagerRow}>
                         {week.map(day => {
-                            //console.log(i)
+                            const disabled = day.getMonth() != standard.getMonth() || day.getFullYear() != standard.getFullYear();
+                            //console.log(disabled)
                             return (
                                 <TouchableOpacity onPress={() => setSelectedDate(day)} style={calendarStyle.dateText}>
-                                    <Text style={isSelectedDate(day.getFullYear(), day.getMonth(), day.getDate(), getDaysInMonth(day.getFullYear(), day.getMonth()))}>{day.getDate()}</Text>
+                                    <Text style={[isSelectedDate(day.getFullYear(), day.getMonth(), day.getDate(), getDaysInMonth(day.getFullYear(), day.getMonth())),
+                                    disabled ? calendarStyle.otherMonthDay : calendarStyle.dayText
+                                    ]}>{day.getDate()}</Text>
                                 </TouchableOpacity>
                             )
                         })}
                     </View>
-    
-    
+
+
                 </Animated.View>
-    
+
             ));
         } else {
+            const month = monthDates[currentWeek]
+            const standard = month[6]
+            //if(swipeDirection == 'Right') standard = month[0]
             return monthDates.map((week, i) => (
-                <Animated.View key={i} style={ [{height: animatedHeight, overflow: 'hidden', borderBottomWidth: 1, borderStyle: 'dotted', borderColor: '#ccc' }]} {...panResponder.panHandlers}>
+                <Animated.View key={i} style={[{ height: animatedHeight, overflow: 'hidden', borderBottomWidth: 1, borderStyle: 'dotted', borderColor: '#ccc' }]} {...panResponder.panHandlers}>
                     <View style={calendarStyle.pagerRow}>
                         {week.map(day => {
+                            const disabled = day.getMonth() != standard.getMonth() || day.getFullYear() != standard.getFullYear();
+                            //console.log(disabled)
                             //console.log(i)
                             return (
                                 <TouchableOpacity onPress={() => setSelectedDate(day)} style={calendarStyle.dateText}>
-                                    <Text style={isSelectedDate(day.getFullYear(), day.getMonth(), day.getDate(), getDaysInMonth(day.getFullYear(), day.getMonth()))}>{day.getDate()}</Text>
+                                    <Text style={[isSelectedDate(day.getFullYear(), day.getMonth(), day.getDate(), getDaysInMonth(day.getFullYear(), day.getMonth())),
+                                    disabled ? calendarStyle.otherMonthDay : calendarStyle.dayText]}>{day.getDate()}</Text>
                                 </TouchableOpacity>
                             )
                         })}
                     </View>
-    
-    
+
+
                 </Animated.View>
-    
+
             ));
         }
         //console.log("currentDate " + currentDate)
@@ -350,6 +365,49 @@ const Calendar: React.FC = () => {
         }
     }
 
+    // const handlePageScroll = (event: PagerViewOnPageScrollEvent) => {
+    //     const { position, offset } = event.nativeEvent;
+
+    //     if (offset > 0) {
+    //         // 스크롤이 오른쪽으로 이동 중
+    //         if (position > currentWeek) {
+    //             setSwipteDirection('Right');
+    //             //setCurrentWeek(position)
+    //         } else if (position < currentWeek) {
+    //             setSwipteDirection('Left');
+    //             //setCurrentWeek(position)
+    //         }
+
+    //     }
+    //     console.log(currentWeek)
+    //     console.log(swipeDirection)
+    // };
+
+    const handlePageSelected = (event: PagerViewOnPageSelectedEvent) => {
+        const { position } = event.nativeEvent;
+        setCurrentDate(monthDates[position][6])
+        console.log(position + " " + monthDates[position].length)
+        let standard = (getDaysInMonth(currentDate.getFullYear(), currentDate.getMonth()) / 7) * 40
+        if (monthDates[position].length > 35) standard += 45
+        if (!isWeekly) {
+            height = standard
+            Animated.spring(animatedHeight, {
+                toValue: standard,
+                useNativeDriver: false,
+            }).start();
+        }
+        if (position > currentWeek) {
+            setSwipteDirection('Right');
+            //setCurrentWeek(position)
+        } else if (position < currentWeek) {
+            setSwipteDirection('Left');
+            //setCurrentWeek(position)
+        }
+        setCurrentWeek(position)
+        //console.log(currentWeek)
+        //console.log(swipeDirection)
+    };
+
     return (
         <View style={calendarStyle.container}>
             {/* 월 변경 */}
@@ -373,7 +431,7 @@ const Calendar: React.FC = () => {
 
                     ))}
                 </View>
-                <PagerView style={calendarStyle.pagerContainer} initialPage={currentWeek}>
+                <PagerView style={calendarStyle.pagerContainer} initialPage={currentWeek} onPageSelected={handlePageSelected}>
                     {renderDays()}
                 </PagerView>
             </View>
